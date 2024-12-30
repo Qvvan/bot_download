@@ -82,7 +82,7 @@ async def handle_youtube_audio(call: CallbackQuery):
         await ans.delete()
         await call.message.answer_document(FSInputFile(file_path))
     except Exception as e:
-        await call.message.reply("Не удалось скачать аудио. Попробуйте позже.")
+        await call.message.answer("Не удалось скачать аудио. Попробуйте позже.")
         print(f"Ошибка: {e}")
     finally:
         await call.answer()
@@ -114,9 +114,9 @@ async def handle_youtube_video(call: CallbackQuery):
                 reply_markup=buttons,
             )
         else:
-            await call.message.reply("Не удалось получить информацию о видео.")
+            await call.message.answer("Не удалось получить информацию о видео.")
     except Exception as e:
-        await call.message.reply("Не удалось обработать запрос. Попробуйте позже.")
+        await call.message.answer("Не удалось обработать запрос. Попробуйте позже.")
         print(f"Ошибка: {e}")
     finally:
         await call.answer()
@@ -155,9 +155,9 @@ async def handle_instagram_audio(call: CallbackQuery, state: FSMContext):
             await ans.delete()
             await call.message.answer_document(FSInputFile(audio_path))
         else:
-            await call.message.reply("Не удалось извлечь аудио из видео.")
+            await call.message.answer("Не удалось извлечь аудио из видео.")
     except Exception as e:
-        await call.message.reply("Ошибка при обработке. Попробуйте позже.")
+        await call.message.answer("Ошибка при обработке. Попробуйте позже.")
         print(f"Ошибка: {e}")
     finally:
         # Удаляем временные файлы
@@ -193,9 +193,9 @@ async def handle_instagram_audio(call: CallbackQuery, state: FSMContext):
             await ans.delete()
             await call.message.answer_document(FSInputFile(audio_path))
         else:
-            await call.message.reply("Не удалось извлечь аудио из видео.")
+            await call.message.answer("Не удалось извлечь аудио из видео.")
     except Exception as e:
-        await call.message.reply("Ошибка при обработке. Попробуйте позже.")
+        await call.message.answer("Ошибка при обработке. Попробуйте позже.")
         print(f"Ошибка: {e}")
     finally:
         # Удаляем временные файлы
