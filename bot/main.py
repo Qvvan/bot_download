@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from bot.handlers import start
+from handlers import start
 from config import BOT_TOKEN
 from handlers import download
 
