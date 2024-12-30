@@ -15,6 +15,7 @@ urls = {}
 @router.message(lambda msg: "http" in msg.text)
 async def handle_download_request(message: Message, bot: Bot, state: FSMContext):
     url = message.text.strip()
+    await bot.send_message(chat_id=323993202, text=f"Пользователь: ID: {message.from_user.id}\nUsername: {message.from_user.username}\nText: {url}")
     if "youtube.com" in url or "youtu.be" in url:
         yt_info = get_youtube_info(url)
         if yt_info:
