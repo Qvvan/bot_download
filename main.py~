@@ -1,0 +1,66 @@
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import InputFile
+from aiogram.utils import executor
+import yt_dlp
+
+# Ваш токен от BotFather
+BOT_TOKEN = "ВАШ_ТОКЕН"
+
+# Инициализация бота
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(bot)
+
+
+# Функция для скачивания видео или аудио
+def download_video_or_audio(url, audio_only=False):
+    ydl_opts = {
+        'format': 'bestaudio/best' if audio_only else 'bestvideo+bestaudio',
+        'outtmpl': 'downloads/%(title)s.%(ext)s',
+        'postprocessors': [
+            {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}] if audio_only else None,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        filename = ydl.prepare_filename(info)
+        return filename
+
+
+# Обработчик команды /start
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    await message.reply(
+        "Привет! Отправь мне ссылку на видео с YouTube или Instagram, и я помогу скачать видео или аудио.")
+
+
+# Обработчик текста с URL
+@dp.message_handler()
+async def handle_message(message: types.Message):
+    url = message.text
+    if "youtube.com" in url or "youtu.be" in url or "instagram.com" in url:
+        await message.reply("Что вы хотите скачать? Видео или аудио? Отправьте 'Видео' или 'Аудио'.")
+        await bot.register_next_step_handler(message, process_download, url)
+    else:
+        await message.reply("Пожалуйста, отправьте ссылку на YouTube или Instagram.")
+
+
+# Функция обработки загрузки
+async def process_download(message: types.Message, url):
+    if message.text.lower() == "видео":
+        await message.reply("Скачиваю видео, подождите...")
+        filepath = download_video_or_audio(url, audio_only=False)
+    elif message.text.lower() == "аудио":
+        await message.reply("Скачиваю аудио, подождите...")
+        filepath = download_video_or_audio(url, audio_only=True)
+    else:
+        await message.reply("Пожалуйста, выберите 'Видео' или 'Аудио'.")
+        return
+
+    # Отправка файла пользователю
+    with open(filepath, 'rb') as file:
+        await bot.send_document(message.chat.id, file)
+    await message.reply("Готово!")
+
+
+# Запуск бота
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
