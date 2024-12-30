@@ -4,6 +4,7 @@ import subprocess
 import requests
 from instaloader import Instaloader, Post
 
+
 def download_instagram_video(url: str) -> str:
     """
     Скачивает видео из Instagram.
@@ -51,3 +52,16 @@ def extract_audio_from_video(video_path: str) -> str:
     except subprocess.CalledProcessError as e:
         print(f"Ошибка при извлечении аудио: {e}")
         return None
+
+
+def normalize_instagram_url(url: str) -> str:
+    """
+    Преобразует укороченную ссылку Instagram в стандартный формат.
+
+    :param url: Ссылка на Instagram.
+    :return: Нормализованная ссылка.
+    """
+    if "instagram.com/share/" in url:
+        shortcode = url.split("/")[-1]  # Извлекаем shortcode из укороченной ссылки
+        return f"https://www.instagram.com/p/{shortcode}/"
+    return url

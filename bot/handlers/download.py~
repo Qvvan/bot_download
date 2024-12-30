@@ -5,8 +5,9 @@ from aiogram.types import Message, CallbackQuery, FSInputFile
 from services.delete_file import delete_file
 from services.instagram import download_instagram_video
 from services.instagram import extract_audio_from_video
-from services.instagram import normalize_instagram_url
 from services.youtube import get_youtube_info, download_youtube_audio, download_youtube_video
+
+from bot.services.instagram import normalize_instagram_url
 
 router = Router()
 urls = {}
