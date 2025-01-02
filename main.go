@@ -224,6 +224,54 @@ func (bh *BotHandler) HandleCallback(callback *tgbotapi.CallbackQuery) {
 	}
 }
 
+func (bh *BotHandler) HandleDownloadVideo(chatID int64, url string, message tgbotapi.Message) {
+	log.Printf("Начало загрузки видео для URL: %s", url)
+
+	videoFile, err := bh.VideoDownloader.Download(url)
+	if err != nil {
+		log.Printf("Ошибка загрузки видео: %v", err)
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
+		return
+	}
+
+	deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
+	if _, err := bh.Bot.Request(deleteMsg); err != nil {
+		log.Printf("Ошибка удаления сообщения: %v", err)
+	}
+
+	videoMsg := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(videoFile))
+	bh.Bot.Send(videoMsg)
+	os.Remove(videoFile)
+}
+
+func (bh *BotHandler) HandleDownloadAudio(chatID int64, url string, message tgbotapi.Message) {
+	log.Printf("Начало извлечения аудио для URL: %s", url)
+
+	videoFile, err := bh.VideoDownloader.Download(url)
+	if err != nil {
+		log.Printf("Ошибка загрузки видео: %v", err)
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
+		return
+	}
+
+	audioFile, err := bh.AudioExtractor.Extract(videoFile)
+	if err != nil {
+		log.Printf("Ошибка извлечения аудио: %v", err)
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио: %v", err)))
+		return
+	}
+
+	deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
+	if _, err := bh.Bot.Request(deleteMsg); err != nil {
+		log.Printf("Ошибка удаления сообщения: %v", err)
+	}
+
+	audioMsg := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(audioFile))
+	bh.Bot.Send(audioMsg)
+	os.Remove(videoFile)
+	os.Remove(audioFile)
+}
+
 func sanitizeURL(input string) string {
 	u, err := url.Parse(strings.TrimSpace(input))
 	if err != nil {
