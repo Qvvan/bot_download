@@ -182,8 +182,6 @@ func (bh *BotHandler) HandleCallback(callback *tgbotapi.CallbackQuery) {
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
-		// Отправляем сообщение об ошибке только при реальной ошибке
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
@@ -206,14 +204,12 @@ func (bh *BotHandler) HandleCallback(callback *tgbotapi.CallbackQuery) {
 func (bh *BotHandler) HandleDownloadVideo(chatID int64, url string, message tgbotapi.Message) {
 	videoFile, err := bh.VideoDownloader.Download(url)
 	if err != nil {
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео")))
 		return
 	}
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
-		// Отправляем сообщение об ошибке только при реальной ошибке
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
@@ -225,21 +221,19 @@ func (bh *BotHandler) HandleDownloadVideo(chatID int64, url string, message tgbo
 func (bh *BotHandler) HandleDownloadAudio(chatID int64, url string, message tgbotapi.Message) {
 	videoFile, err := bh.VideoDownloader.Download(url)
 	if err != nil {
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео")))
 		return
 	}
 
 	audioFile, err := bh.AudioExtractor.Extract(videoFile)
 	if err != nil {
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио: %v", err)))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио")))
 		return
 	}
 
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
-		// Отправляем сообщение об ошибке только при реальной ошибке
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
