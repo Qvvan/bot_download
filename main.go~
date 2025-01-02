@@ -113,8 +113,8 @@ func (bh *BotHandler) StartBot() {
 		if update.CallbackQuery != nil {
 			bh.HandleCallback(update.CallbackQuery)
 		} else if update.Message != nil {
-		    bh.ForwardMessageToAdmin(update.Message)
 			if update.Message.IsCommand() {
+			
 				switch update.Message.Command() {
 				case "start":
 					bh.HandleStart(update.Message)
