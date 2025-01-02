@@ -113,7 +113,7 @@ func (bh *BotHandler) StartBot() {
 		if update.CallbackQuery != nil {
 			bh.HandleCallback(update.CallbackQuery)
 		} else if update.Message != nil {
-		    bh.ForwardMessageToAdmin(update.Message)
+			bh.ForwardMessageToAdmin(update.Message)
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
 				case "start":
@@ -182,6 +182,8 @@ func (bh *BotHandler) HandleCallback(callback *tgbotapi.CallbackQuery) {
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
+		// Отправляем сообщение об ошибке только при реальной ошибке
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
@@ -204,12 +206,14 @@ func (bh *BotHandler) HandleCallback(callback *tgbotapi.CallbackQuery) {
 func (bh *BotHandler) HandleDownloadVideo(chatID int64, url string, message tgbotapi.Message) {
 	videoFile, err := bh.VideoDownloader.Download(url)
 	if err != nil {
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео")))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
 		return
 	}
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
+		// Отправляем сообщение об ошибке только при реальной ошибке
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
@@ -221,19 +225,21 @@ func (bh *BotHandler) HandleDownloadVideo(chatID int64, url string, message tgbo
 func (bh *BotHandler) HandleDownloadAudio(chatID int64, url string, message tgbotapi.Message) {
 	videoFile, err := bh.VideoDownloader.Download(url)
 	if err != nil {
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео")))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
 		return
 	}
 
 	audioFile, err := bh.AudioExtractor.Extract(videoFile)
 	if err != nil {
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио")))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио: %v", err)))
 		return
 	}
 
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, message.MessageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
+		// Отправляем сообщение об ошибке только при реальной ошибке
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
@@ -254,6 +260,27 @@ func sanitizeURL(input string) string {
 	cleaned := u.String()
 	log.Printf("Очистка URL: %s -> %s", input, cleaned)
 	return cleaned
+}
+
+// ForwardMessageToAdmin отправляет сообщение от пользователя админу
+func (bh *BotHandler) ForwardMessageToAdmin(msg *tgbotapi.Message) {
+	adminID := int64(323993202) // Ваш Telegram ID
+	userID := msg.From.ID
+	username := msg.From.UserName
+	text := msg.Text
+
+	// Формируем сообщение для администратора
+	message := fmt.Sprintf(
+		"Сообщение от пользователя:\nID: %d\nЮзернейм: @%s\nТекст: %s",
+		userID, username, text,
+	)
+
+	// Отправляем сообщение админу
+	adminMsg := tgbotapi.NewMessage(adminID, message)
+	_, err := bh.Bot.Send(adminMsg)
+	if err != nil {
+		log.Printf("Ошибка отправки сообщения админу: %v", err)
+	}
 }
 
 func main() {
@@ -277,26 +304,4 @@ func main() {
 
 	log.Printf("Бот запущен: @%s", bot.Self.UserName)
 	handler.StartBot()
-}
-
-
-// ForwardMessageToAdmin отправляет сообщение от пользователя админу
-func (bh *BotHandler) ForwardMessageToAdmin(msg *tgbotapi.Message) {
-	adminID := int64(323993202) // Ваш Telegram ID
-	userID := msg.From.ID
-	username := msg.From.UserName
-	text := msg.Text
-
-	// Формируем сообщение для администратора
-	message := fmt.Sprintf(
-		"Сообщение от пользователя:\nID: %d\nЮзернейм: @%s\nТекст: %s",
-		userID, username, text,
-	)
-
-	// Отправляем сообщение админу
-	adminMsg := tgbotapi.NewMessage(adminID, message)
-	_, err := bh.Bot.Send(adminMsg)
-	if err != nil {
-		log.Printf("Ошибка отправки сообщения админу: %v", err)
-	}
 }
