@@ -21,6 +21,7 @@ type Downloader interface {
 type VideoDownloader struct{}
 
 func (vd VideoDownloader) Download(url string) (string, error) {
+	log.Printf("Начинаем загрузку видео по URL: %s", url)
 
 	originalFile := "original_video.mp4"
 	outputFile := "video.mp4"
@@ -30,12 +31,14 @@ func (vd VideoDownloader) Download(url string) (string, error) {
 		log.Printf("Ошибка загрузки видео с yt-dlp: %v", err)
 		return "", fmt.Errorf("Ошибка скачивания видео: %v", err)
 	}
+	log.Printf("Видео успешно загружено: %s", originalFile)
 
 	// Перекодируем видео для совместимости
 	if err := runCommand("ffmpeg", "-i", originalFile, "-c:v", "libx264", "-preset", "fast", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", outputFile); err != nil {
 		log.Printf("Ошибка перекодирования видео: %v", err)
 		return "", fmt.Errorf("Ошибка перекодирования видео: %v", err)
 	}
+	log.Printf("Видео успешно перекодировано: %s", outputFile)
 
 	// Удаляем исходный файл
 	os.Remove(originalFile)
@@ -46,11 +49,14 @@ func (vd VideoDownloader) Download(url string) (string, error) {
 type AudioExtractor struct{}
 
 func (ae AudioExtractor) Extract(videoFile string) (string, error) {
+	log.Printf("Начинаем извлечение аудио из видео: %s", videoFile)
+
 	audioFile := "audio.mp3"
 	if err := runCommand("ffmpeg", "-i", videoFile, "-q:a", "0", "-map", "a", audioFile); err != nil {
 		log.Printf("Ошибка извлечения аудио: %v", err)
 		return "", fmt.Errorf("Ошибка извлечения аудио: %v", err)
 	}
+	log.Printf("Аудио успешно извлечено: %s", audioFile)
 
 	return audioFile, nil
 }
@@ -94,6 +100,8 @@ func cleanupCallbackStoragePeriodically() {
 
 // Утилита для выполнения команд
 func runCommand(command string, args ...string) error {
+	log.Printf("Запускаем команду: %s %v", command, args)
+
 	cmd := exec.Command(command, args...)
 	output, err := cmd.CombinedOutput()
 	log.Printf("Вывод команды: %s", string(output))
@@ -111,24 +119,6 @@ type BotHandler struct {
 	AudioExtractor  AudioExtractor
 }
 
-func (bh *BotHandler) ForwardMessageToAdmin(msg *tgbotapi.Message) {
-	adminID := int64(323993202) // Ваш Telegram ID
-	userID := msg.From.ID
-	username := msg.From.UserName
-	text := msg.Text
-	// Формируем сообщение для администратора
-	message := fmt.Sprintf(
-		"Сообщение от пользователя:\nID: %d\nЮзернейм: @%s\nТекст: %s",
-		userID, username, text,
-	)
-	// Отправляем сообщение админу
-	adminMsg := tgbotapi.NewMessage(adminID, message)
-	_, err := bh.Bot.Send(adminMsg)
-	if err != nil {
-		log.Printf("Ошибка отправки сообщения админу: %v", err)
-	}
-}
-
 func (bh *BotHandler) StartBot() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -138,9 +128,10 @@ func (bh *BotHandler) StartBot() {
 	log.Println("Бот готов принимать обновления")
 	for update := range updates {
 		if update.CallbackQuery != nil {
+			log.Printf("Обработан CallbackQuery: %s", update.CallbackQuery.Data)
 			bh.HandleCallback(update.CallbackQuery)
 		} else if update.Message != nil {
-			bh.ForwardMessageToAdmin(update.Message)
+			log.Printf("Обработано сообщение от пользователя: %s", update.Message.Text)
 			if update.Message.IsCommand() {
 				switch update.Message.Command() {
 				case "start":
@@ -214,6 +205,7 @@ func (bh *BotHandler) HandleCallback(callback *tgbotapi.CallbackQuery) {
 	deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
 	if _, err := bh.Bot.Request(deleteMsg); err != nil {
 		log.Printf("Ошибка удаления сообщения: %v", err)
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, "Не удалось удалить сообщение."))
 		return
 	}
 
@@ -238,7 +230,7 @@ func (bh *BotHandler) HandleDownloadVideo(chatID int64, url string, message tgbo
 	videoFile, err := bh.VideoDownloader.Download(url)
 	if err != nil {
 		log.Printf("Ошибка загрузки видео: %v", err)
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео")))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
 		return
 	}
 
@@ -258,14 +250,14 @@ func (bh *BotHandler) HandleDownloadAudio(chatID int64, url string, message tgbo
 	videoFile, err := bh.VideoDownloader.Download(url)
 	if err != nil {
 		log.Printf("Ошибка загрузки видео: %v", err)
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео")))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка загрузки видео: %v", err)))
 		return
 	}
 
 	audioFile, err := bh.AudioExtractor.Extract(videoFile)
 	if err != nil {
 		log.Printf("Ошибка извлечения аудио: %v", err)
-		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио")))
+		bh.Bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Ошибка извлечения аудио: %v", err)))
 		return
 	}
 
