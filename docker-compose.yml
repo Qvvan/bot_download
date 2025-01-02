@@ -1,15 +1,11 @@
-version: '3.9'
+version: "3.9"
 
 services:
   bot:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: yt_inst_bot
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./downloads:/app/downloads  # Локальная папка для загрузок
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
-      - "8080:8080"  # Если понадобится внешний доступ (напр. healthcheck)
+      - "8080:8080"

@@ -1,6 +1,0 @@
-aiogram==3.*
-pytube
-instaloader
-ffmpeg-python
-python-dotenv
-yt-dlp
