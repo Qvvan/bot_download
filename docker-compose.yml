@@ -7,8 +7,6 @@ services:
       dockerfile: Dockerfile
     container_name: bot_downloader
     restart: unless-stopped
-    network_mode: host
+    network_mode: host # Используем сеть хоста для контейнера
     environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-    ports:
-      - "8080:8080"
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} # Переменная окружения для токена
