@@ -96,6 +96,25 @@ type BotHandler struct {
 	AudioExtractor  AudioExtractor
 }
 
+// ForwardMessageToAdmin отправляет сообщение от пользователя админу
+func (bh *BotHandler) ForwardMessageToAdmin(msg *tgbotapi.Message) {
+	adminID := int64(323993202) // Ваш Telegram ID
+	userID := msg.From.ID
+	username := msg.From.UserName
+	text := msg.Text
+	// Формируем сообщение для администратора
+	message := fmt.Sprintf(
+		"Сообщение от пользователя:\nID: %d\nЮзернейм: @%s\nТекст: %s",
+		userID, username, text,
+	)
+	// Отправляем сообщение админу
+	adminMsg := tgbotapi.NewMessage(adminID, message)
+	_, err := bh.Bot.Send(adminMsg)
+	if err != nil {
+		log.Printf("Ошибка отправки сообщения админу: %v", err)
+	}
+}
+
 func (bh *BotHandler) StartBot() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -111,6 +130,7 @@ func (bh *BotHandler) StartBot() {
 			if update.CallbackQuery != nil {
 				bh.HandleCallback(update.CallbackQuery)
 			} else if update.Message != nil {
+			    bh.ForwardMessageToAdmin(update.Message)
 				if update.Message.IsCommand() {
 					switch update.Message.Command() {
 					case "start":
